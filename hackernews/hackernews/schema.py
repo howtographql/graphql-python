@@ -9,7 +9,7 @@ class Query(
     users.schema.Query,
     links.schema.Query,
     links.schema_relay.RelayQuery,
-    graphene.ObjectType
+    graphene.ObjectType,
 ):
     pass
 
