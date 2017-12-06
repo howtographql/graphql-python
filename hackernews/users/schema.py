@@ -5,8 +5,8 @@ from django.contrib.auth import authenticate
 from users.models import User
 
 
-def get_user(context):
-    token = context.session.get('token')
+def get_user(info):
+    token = info.context.session.get('token')
 
     if not token:
         return
@@ -23,37 +23,19 @@ class UserType(DjangoObjectType):
         model = User
 
 
-class Query(graphene.AbstractType):
-    me = graphene.Field(UserType)
-    users = graphene.List(UserType)
-
-    @graphene.resolve_only_args
-    def resolve_users(self):
-        return User.objects.all()
-
-    def resolve_me(self, args, context, info):
-        user = get_user(context)
-        if not user:
-            raise Exception('Not logged!')
-
-        return user
-
-
 class CreateUser(graphene.Mutation):
     user = graphene.Field(UserType)
 
-    class Input:
+    class Arguments:
         username = graphene.String(required=True)
         password = graphene.String(required=True)
         email = graphene.String(required=True)
 
-    @staticmethod
-    def mutate(root, input, context, info):
-        username = input.get('username')
-        password = input.get('password')
-        email = input.get('email')
-
-        user = User(username=username, email=email)
+    def mutate(self, info, username, password, email):
+        user = User(
+            username=username,
+            email=email,
+        )
         user.set_password(password)
         user.save()
 
@@ -63,24 +45,35 @@ class CreateUser(graphene.Mutation):
 class LogIn(graphene.Mutation):
     user = graphene.Field(UserType)
 
-    class Input:
+    class Arguments:
         username = graphene.String()
         password = graphene.String()
 
-    @staticmethod
-    def mutate(root, input, context, info):
-        user = authenticate(
-            username=input.get('username'),
-            password=input.get('password'),
-        )
+    def mutate(self, info, username, password):
+        user = authenticate(username=username, password=password)
 
         if not user:
             raise Exception('Invalid username or password!')
 
-        context.session['token'] = user.token
+        info.context.session['token'] = user.token
         return LogIn(user=user)
 
 
-class Mutation(graphene.AbstractType):
+class Mutation(graphene.ObjectType):
     create_user = CreateUser.Field()
     login = LogIn.Field()
+
+
+class Query(graphene.ObjectType):
+    me = graphene.Field(UserType)
+    users = graphene.List(UserType)
+
+    def resolve_users(self, info):
+        return User.objects.all()
+
+    def resolve_me(self, info):
+        user = get_user(info)
+        if not user:
+            raise Exception('Not logged!')
+
+        return user

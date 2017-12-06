@@ -1,15 +1,13 @@
 import graphene
 from graphene_django import DjangoObjectType
-from django.db.models import Q
 from graphql import GraphQLError
+from django.db.models import Q
 
 from links.models import Link, Vote
 from users.schema import get_user, UserType
 
 
 class LinkType(DjangoObjectType):
-    search = graphene.String()
-
     class Meta:
         model = Link
 
@@ -19,7 +17,7 @@ class VoteType(DjangoObjectType):
         model = Vote
 
 
-class Query(graphene.AbstractType):
+class Query(graphene.ObjectType):
     links = graphene.List(
         LinkType,
         search=graphene.String(),
@@ -28,11 +26,7 @@ class Query(graphene.AbstractType):
     )
     votes = graphene.List(VoteType)
 
-    def resolve_links(self, args, context, info):
-        search = args.get('search')
-        first = args.get('first')
-        skip = args.get('skip')
-
+    def resolve_links(self, info, search=None, first=None, skip=None, **kwargs):
         qs = Link.objects.all()
 
         if search:
@@ -50,8 +44,7 @@ class Query(graphene.AbstractType):
 
         return qs
 
-    @graphene.resolve_only_args
-    def resolve_votes(self):
+    def resolve_votes(self, info, **kwargs):
         return Vote.objects.all()
 
 
@@ -61,18 +54,16 @@ class CreateLink(graphene.Mutation):
     description = graphene.String()
     posted_by = graphene.Field(UserType)
 
-    class Input:
+    class Arguments:
         url = graphene.String()
         description = graphene.String()
 
-    @staticmethod
-    def mutate(root, input, context, info):
-
-        user = get_user(context) or None
+    def mutate(self, info, url, description):
+        user = get_user(info) or None
 
         link = Link(
-            url=input.get('url'),
-            description=input.get('description'),
+            url=url,
+            description=description,
             posted_by=user,
         )
         link.save()
@@ -89,16 +80,15 @@ class CreateVote(graphene.Mutation):
     user = graphene.Field(UserType)
     link = graphene.Field(LinkType)
 
-    class Input:
+    class Arguments:
         link_id = graphene.Int()
 
-    @staticmethod
-    def mutate(root, input, context, info):
-        user = get_user(context) or None
+    def mutate(self, info, link_id):
+        user = get_user(info) or None
         if not user:
             raise GraphQLError('You must be logged to vote!')
 
-        link = Link.objects.filter(id=input.get('link_id')).first()
+        link = Link.objects.filter(id=link_id).first()
         if not link:
             raise Exception('Invalid Link!')
 
@@ -110,6 +100,6 @@ class CreateVote(graphene.Mutation):
         return CreateVote(user=user, link=link)
 
 
-class Mutation(graphene.AbstractType):
+class Mutation(graphene.ObjectType):
     create_link = CreateLink.Field()
     create_vote = CreateVote.Field()

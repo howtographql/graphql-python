@@ -22,10 +22,10 @@ class LinkNode(DjangoObjectType):
 class VoteNode(DjangoObjectType):
     class Meta:
         model = Vote
-        interfaces = (graphene.relay.Node, )
+        interfaces = (graphene.relay.Node,)
 
 
-class RelayQuery(graphene.AbstractType):
+class RelayQuery(graphene.ObjectType):
     relay_link = graphene.relay.Node.Field(LinkNode)
     relay_links = DjangoFilterConnectionField(LinkNode, filterset_class=LinkFilter)
 
@@ -37,10 +37,8 @@ class RelayCreateLink(graphene.relay.ClientIDMutation):
         url = graphene.String()
         description = graphene.String()
 
-    @classmethod
-    def mutate_and_get_payload(cls, input, context, info):
-
-        user = get_user(context) or None
+    def mutate_and_get_payload(root, info, **input):
+        user = get_user(info) or None
 
         link = Link(
             url=input.get('url'),
@@ -52,5 +50,5 @@ class RelayCreateLink(graphene.relay.ClientIDMutation):
         return RelayCreateLink(link=link)
 
 
-class RelayMutation(graphene.AbstractType):
+class RelayMutation(graphene.ObjectType):
     relay_create_link = RelayCreateLink.Field()
