@@ -1,10 +1,12 @@
+from django.db.models import Q
+
 import graphene
 from graphene_django import DjangoObjectType
 from graphql import GraphQLError
-from django.db.models import Q
 
-from links.models import Link, Vote
 from users.schema import UserType
+
+from .models import Link, Vote
 
 
 class LinkType(DjangoObjectType):
