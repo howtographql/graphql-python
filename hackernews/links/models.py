@@ -4,7 +4,7 @@ from django.conf import settings
 
 class Link(models.Model):
     url = models.URLField()
-    description = models.TextField(null=True, blank=True)
+    description = models.TextField(blank=True)
     posted_by = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         null=True,
