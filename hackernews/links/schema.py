@@ -61,7 +61,7 @@ class CreateLink(graphene.Mutation):
         description = graphene.String()
 
     def mutate(self, info, url, description):
-        user = info.xontext.user
+        user = info.context.user
         link = Link(
             url=url,
             description=description,

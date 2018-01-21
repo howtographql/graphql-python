@@ -108,7 +108,7 @@ AUTH_PASSWORD_VALIDATORS = [
 # https://docs.djangoproject.com/en/2.0/ref/contrib/auth/#authentication-backends-reference
 
 AUTHENTICATION_BACKENDS = [
-    'graphql_jwt.backends.JWTBackend',
+    'graphql_jwt.backends.JSONWebTokenBackend',
     'django.contrib.auth.backends.ModelBackend',
 ]
 
