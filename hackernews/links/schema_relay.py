@@ -4,7 +4,6 @@ from graphene_django import DjangoObjectType
 from graphene_django.filter import DjangoFilterConnectionField
 
 from links.models import Link, Vote
-from users.schema import get_user
 
 
 class LinkFilter(django_filters.FilterSet):
@@ -38,7 +37,7 @@ class RelayCreateLink(graphene.relay.ClientIDMutation):
         description = graphene.String()
 
     def mutate_and_get_payload(root, info, **input):
-        user = get_user(info) or None
+        user = info.context.user
 
         link = Link(
             url=input.get('url'),
